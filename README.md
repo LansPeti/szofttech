@@ -1,4 +1,4 @@
-```markdown
+
 # Naptár Projekt - Frontend (Szoftvertechnológia)
 
 Ez a repository tartalmazza a naptár alkalmazás kliensoldali (frontend) részét a szoftech tárgyhoz. A projekt alapjai, a navigáció és a bejelentkezés logikája (mockolva) már inicializálva lettek. 
@@ -56,4 +56,4 @@ A projektben nem használunk hagyományos CSS vagy SCSS fájlokat. A kinézet a 
 * Ha kell egy gomb, beviteli mező vagy felugró ablak (Modal/Dialog), a MUI dokumentációjából kell átemelni a kész komponenseket (`<Button>`, `<TextField>`, `<Box>`).
 * A naptár UI-hoz a `@fullcalendar/react` csomag van telepítve. 
 * Jelenleg nincs valós backend kapcsolat adatbázissal (a CRUD és a jelszókezelés a backendes csapat feladata lesz a követelmények szerint). A UI teszteléséhez frontend oldalon statikus mock adatokat (hardkódolt tömböket) érdemes használni a `CalendarPage.jsx`-ben.
-```
+
