@@ -12,6 +12,7 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         await login(username, password);
+        console.log(await fetch("/api/hello"))
         navigate('/'); // Sikeres belépés után irány a főoldal
     };
 
