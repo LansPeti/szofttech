@@ -59,8 +59,8 @@ A frontend nem közvetlenül adatbázisból olvas — **minden adat a backend AP
 ### 2.2 Repo klónozása (egyszeri)
 
 ```bash
-git clone https://github.com/<csapat-repo>/naptar-projekt.git
-cd naptar-projekt
+git clone https://github.com/LansPeti/szofttech
+cd szofttech
 ```
 
 ### 2.3 Frontend indítása
@@ -161,8 +161,8 @@ main ─────────────────────────
 
 ```bash
 # 1. Repo klónozása
-git clone https://github.com/<csapat>/naptar-projekt.git
-cd naptar-projekt
+git clone https://github.com/LansPeti/szofttech
+cd szofttech
 
 # 2. Dev branch (EGY ember hozza létre, a többiek pull-olják)
 # Ha te hozod létre:
