@@ -75,7 +75,7 @@ cd szofttech
 
 ```bash
 # 1. Belépés a backend mappába
-cd backend
+cd server
 
 # 2. Függőségek telepítése (első alkalommal vagy ha valaki új csomagot adott hozzá)
 npm install
@@ -147,7 +147,7 @@ naptar-projekt/                   ← GitHub repo gyökere
 │   ├── src/
 │   ├── package.json
 │   └── ...
-├── backend/                      ← Express szerver (a TI területetek)
+├── server/                      ← Express szerver (a TI területetek)
 │   ├── index.js                  ← Fő belépési pont (már megvan)
 │   ├── package.json
 │   ├── .env                      ← Titkos kulcsok (NE COMMITOLD!)
@@ -213,7 +213,7 @@ main ─────────────────────────
 | `dev` | Közös fejlesztési ág. Ide merge-ölnek a feature branch-ek. | Mindenki (merge-ön keresztül) |
 | `feature/xyz` | Egy adott feladat saját ága. | Csak az, aki azon dolgozik |
 
-### 4.2 Egyszeri setup (az 1. napon, mindenki megcsinálja)
+### 4.2 Egyszeri setup (az 1. napon, mindenki megcsinálja) (EZ MÁR KÉSZEN VAN, NEM KELL VELE FOGLALKOZNI)
 
 ```bash
 # 1. Repo klónozása
