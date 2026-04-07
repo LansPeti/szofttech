@@ -65,7 +65,7 @@ A következőknek telepítve kell lenniük a gépeden:
 
 ```bash
 # 1. Repo letöltése a GitHub-ról
-git git clone https://github.com/LansPeti/szofttech
+git clone https://github.com/LansPeti/szofttech
 
 # 2. Belépés a projekt mappájába
 cd szofttech
