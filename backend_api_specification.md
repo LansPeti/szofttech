@@ -65,10 +65,10 @@ A következőknek telepítve kell lenniük a gépeden:
 
 ```bash
 # 1. Repo letöltése a GitHub-ról
-git clone https://github.com/<csapat-repo>/naptar-projekt.git
+git git clone https://github.com/LansPeti/szofttech
 
 # 2. Belépés a projekt mappájába
-cd naptar-projekt
+cd szofttech
 ```
 
 ### 2.3 Backend indítása
