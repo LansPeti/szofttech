@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+
 const authRoutes = require("./routes/auth");
+const authMiddleware = require("./middleware/auth");
 
 const app = express();
 const PORT = 5000;
