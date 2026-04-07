@@ -85,7 +85,7 @@ Böngészőben: `http://localhost:5173`
 
 ```bash
 # Második terminálban:
-cd backend
+cd server
 npm install
 node index.js
 ```
@@ -93,7 +93,7 @@ node index.js
 **Szóval fejlesztés közben mindig 2 terminál fut:**
 ```
 Terminál 1:  frontend/ → npm run dev      → localhost:5173  (a böngészőben ezt nézed)
-Terminál 2:  backend/  → node index.js    → localhost:5000  (háttérben fut, kiszolgálja az API kéréseket)
+Terminál 2:  server/  → node index.js    → localhost:5000  (háttérben fut, kiszolgálja az API kéréseket)
 ```
 
 ---
@@ -123,7 +123,7 @@ naptar-projekt/                        ← GitHub repo gyökere
 │   │       └── api.js                 ← ÚJ (Frontend 1, 1. nap!)
 │   ├── package.json
 │   └── vite.config.js
-├── backend/                           ← A backendesek területe
+├── server/                           ← A backendesek területe
 │   ├── index.js
 │   └── ...
 ├── .gitignore
@@ -157,7 +157,7 @@ main ─────────────────────────
 | `dev` | Közös fejlesztési ág | Ide merge-ölnek a feature branch-ek |
 | `feature/xyz` | Saját feladat ága | Csak te dolgozol rajta |
 
-### 4.2 Egyszeri setup (az 1. napon)
+### 4.2 Egyszeri setup (az 1. napon) (EZ MÁR KÉSZ VAN, NEM KELL VELE FOGLALKOZNI)
 
 ```bash
 # 1. Repo klónozása
