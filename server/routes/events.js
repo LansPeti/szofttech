@@ -83,3 +83,45 @@ router.post("/", (req, res) => {
 
   res.status(201).json(responseEvent);
 });
+
+
+
+
+//////////////////////////////////////////////////////
+// PUT /api/events/:id
+// Esemény módosítása
+//////////////////////////////////////////////////////
+router.put("/:id", (req, res) => {
+  const events = readEvents();
+  const eventIndex = events.findIndex((e) => e.id === req.params.id);
+
+  if (eventIndex === -1) {
+    return res.status(404).json({ error: "Esemény nem található" });
+  }
+
+  const event = events[eventIndex];
+
+  if (event.userId !== req.userId) {
+    return res
+      .status(403)
+      .json({ error: "Nincs jogosultságod ehhez az eseményhez" });
+  }
+
+  const { title, description, start, end, allDay, color } = req.body;
+
+  if (title !== undefined) event.title = title;
+  if (description !== undefined) event.description = description;
+  if (start !== undefined)
+    event.start = new Date(start).toISOString();
+  if (end !== undefined)
+    event.end = end ? new Date(end).toISOString() : null;
+  if (allDay !== undefined) event.allDay = allDay;
+  if (color !== undefined) event.color = color;
+
+  events[eventIndex] = event;
+  writeEvents(events);
+
+  const { userId, ...responseEvent } = event;
+
+  res.status(200).json(responseEvent);
+});
