@@ -199,3 +199,34 @@ router.delete("/calendars/:id", (req, res) => {
 
   res.status(204).send();
 });
+
+
+//////////////////////////////////////////////////////
+// GET /api/sharing/calendars/:ownerId/events
+//////////////////////////////////////////////////////
+
+router.get("/calendars/:ownerId/events", (req, res) => {
+  const shares = readJson(sharesFilePath);
+  const events = readJson(eventsFilePath);
+
+  const validShare = shares.find(
+    (s) =>
+      s.ownerId === req.params.ownerId &&
+      s.sharedWithId === req.userId &&
+      s.status === "ACCEPTED"
+  );
+
+  if (!validShare) {
+    return res
+      .status(403)
+      .json({ error: "Nincs megosztási jogosultságod" });
+  }
+
+  const ownerEvents = events
+    .filter((e) => e.userId === req.params.ownerId)
+    .map(({ userId, ...rest }) => rest);
+
+  res.status(200).json(ownerEvents);
+});
+
+module.exports = router;
