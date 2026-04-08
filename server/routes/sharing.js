@@ -107,3 +107,42 @@ router.post("/invite", (req, res) => {
     status: newShare.status,
   });
 });
+
+
+
+//////////////////////////////////////////////////////
+// PUT /api/sharing/invites/:id/accept
+//////////////////////////////////////////////////////
+
+router.put("/invites/:id/accept", (req, res) => {
+  updateInviteStatus(req, res, "ACCEPTED");
+});
+
+//////////////////////////////////////////////////////
+// PUT /api/sharing/invites/:id/reject
+//////////////////////////////////////////////////////
+
+router.put("/invites/:id/reject", (req, res) => {
+  updateInviteStatus(req, res, "REJECTED");
+});
+
+function updateInviteStatus(req, res, newStatus) {
+  const shares = readJson(sharesFilePath);
+  const share = shares.find((s) => s.id === req.params.id);
+
+  if (!share) {
+    return res.status(404).json({ error: "Meghívó nem található" });
+  }
+
+  if (share.sharedWithId !== req.userId) {
+    return res.status(403).json({ error: "Nincs jogosultságod" });
+  }
+
+  share.status = newStatus;
+  writeJson(sharesFilePath, shares);
+
+  res.status(200).json({
+    id: share.id,
+    status: share.status,
+  });
+}
