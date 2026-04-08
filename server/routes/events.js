@@ -125,3 +125,32 @@ router.put("/:id", (req, res) => {
 
   res.status(200).json(responseEvent);
 });
+
+
+//////////////////////////////////////////////////////
+// DELETE /api/events/:id
+// Esemény törlése
+//////////////////////////////////////////////////////
+router.delete("/:id", (req, res) => {
+  const events = readEvents();
+  const eventIndex = events.findIndex((e) => e.id === req.params.id);
+
+  if (eventIndex === -1) {
+    return res.status(404).json({ error: "Esemény nem található" });
+  }
+
+  const event = events[eventIndex];
+
+  if (event.userId !== req.userId) {
+    return res
+      .status(403)
+      .json({ error: "Nincs jogosultságod ehhez az eseményhez" });
+  }
+
+  events.splice(eventIndex, 1);
+  writeEvents(events);
+
+  res.status(204).send();
+});
+
+module.exports = router;
