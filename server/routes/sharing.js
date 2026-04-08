@@ -177,3 +177,25 @@ router.get("/calendars", (req, res) => {
 
   res.status(200).json(calendars);
 });
+
+//////////////////////////////////////////////////////
+// DELETE /api/sharing/calendars/:id
+//////////////////////////////////////////////////////
+
+router.delete("/calendars/:id", (req, res) => {
+  const shares = readJson(sharesFilePath);
+  const index = shares.findIndex((s) => s.id === req.params.id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: "Megosztás nem található" });
+  }
+
+  if (shares[index].sharedWithId !== req.userId) {
+    return res.status(403).json({ error: "Nincs jogosultságod" });
+  }
+
+  shares.splice(index, 1);
+  writeJson(sharesFilePath, shares);
+
+  res.status(204).send();
+});
