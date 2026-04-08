@@ -56,3 +56,54 @@ router.get("/invites", (req, res) => {
 
   res.status(200).json(invites);
 });
+
+
+
+//////////////////////////////////////////////////////
+// POST /api/sharing/invite
+//////////////////////////////////////////////////////
+
+router.post("/invite", (req, res) => {
+  const { inviteToken } = req.body;
+
+  const users = readJson(usersFilePath);
+  const shares = readJson(sharesFilePath);
+
+  const owner = users.find((u) => u.inviteToken === inviteToken);
+
+  if (!owner) {
+    return res.status(404).json({ error: "Érvénytelen meghívó token" });
+  }
+
+  if (owner.id === req.userId) {
+    return res.status(400).json({ error: "Saját magadat nem hívhatod meg" });
+  }
+
+  const existingShare = shares.find(
+    (s) =>
+      s.ownerId === owner.id &&
+      s.sharedWithId === req.userId
+  );
+
+  if (existingShare) {
+    return res.status(409).json({ error: "Már létezik megosztás köztetek" });
+  }
+
+  const newShare = {
+    id: uuidv4(),
+    ownerId: owner.id,
+    sharedWithId: req.userId,
+    status: "PENDING",
+    createdAt: new Date().toISOString(),
+  };
+
+  shares.push(newShare);
+  writeJson(sharesFilePath, shares);
+
+  res.status(201).json({
+    id: newShare.id,
+    ownerId: newShare.ownerId,
+    sharedWithId: newShare.sharedWithId,
+    status: newShare.status,
+  });
+});
