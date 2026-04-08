@@ -79,7 +79,7 @@ router.post("/", (req, res) => {
   events.push(newEvent);
   writeEvents(events);
 
-  const { userId, ...responseEvent } = newEvent;
+  const { userId, ...responseEvent } = newEvent;  //Note: userId tudja a frontend?
 
   res.status(201).json(responseEvent);
 });
