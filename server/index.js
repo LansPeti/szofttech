@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 
 const authRoutes = require("./routes/auth");
+const sharingRoutes = require("./routes/sharing");
 const authMiddleware = require("./middleware/auth");
 
 const app = express();
@@ -11,6 +12,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api", authRoutes);
+app.use("/api/sharing", authMiddleware, sharingRoutes);
+
 
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from Express backend!" });
