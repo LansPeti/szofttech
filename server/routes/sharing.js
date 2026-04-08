@@ -146,3 +146,34 @@ function updateInviteStatus(req, res, newStatus) {
     status: share.status,
   });
 }
+
+
+//////////////////////////////////////////////////////
+// GET /api/sharing/calendars
+//////////////////////////////////////////////////////
+
+router.get("/calendars", (req, res) => {
+  const shares = readJson(sharesFilePath);
+  const users = readJson(usersFilePath);
+
+  const calendars = shares
+    .filter(
+      (s) =>
+        s.sharedWithId === req.userId &&
+        s.status === "ACCEPTED"
+    )
+    .map((share) => {
+      const owner = users.find((u) => u.id === share.ownerId);
+
+      return {
+        id: share.id,
+        owner: {
+          id: owner?.id,
+          username: owner?.username,
+        },
+        sharedSince: share.createdAt,
+      };
+    });
+
+  res.status(200).json(calendars);
+});
