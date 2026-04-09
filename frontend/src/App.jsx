@@ -14,6 +14,7 @@ import CalendarPage from './pages/CalendarPage';
 import Settings from './pages/Settings';
 import ProfileSettings from "./pages/ProfileSettings";
 import SharedWithMe from "./pages/SharedWithMe";
+import InvitePage from "./pages/InvitePage.jsx";
 
 function App() {
     return (
@@ -30,6 +31,7 @@ function App() {
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/shared" element={<SharedWithMe />} />
                         <Route path="/profile" element={<ProfileSettings />} />
+                        <Route path="/invite/:token" element={<InvitePage />} />
                     </Route>
                 </Routes>
             </BrowserRouter>

@@ -70,30 +70,31 @@ async function apiFetch(endpoint, options = {}) {
 // AUTH SERVICE — Bejelentkezés és regisztráció
 // ================================================================
 export const authService = {
-  /**
-   * Bejelentkezés felhasználónév + jelszóval.
-   * A backend JWT tokent ad vissza, amit utána a localStorage-ben tárolunk.
-   * @returns {{ id, username, email, avatarColor, token }}
-   */
-  login: (username, password) =>
-    apiFetch("/auth/login", {
-      method: "POST",
+  login: async (username, password) => {
+    const response = await fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
-    }),
-
-  /**
-   * Új felhasználó regisztrációja.
-   * Sikeres regisztráció után a backend azonnal tokent is ad (auto-login).
-   * @returns {{ id, username, email, token }}
-   */
-  register: (username, email, password) =>
-    apiFetch("/auth/register", {
-      method: "POST",
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
+    }
+    return response.json();
+  },
+register: async (username, password, email) => {
+    const response = await fetch(`${API_BASE}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password }),
-    }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
+    }
+    return response.json();
+  }
 };
-
-
 // ================================================================
 // EVENT SERVICE — Naptáresemények CRUD műveletei
 // ================================================================

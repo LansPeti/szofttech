@@ -1,16 +1,21 @@
-// src/pages/Login.jsx
-// ================================================================
-// Bejelentkezési oldal — felhasználónév + jelszó alapú login.
-// Ha a backend hibát dob (pl. rossz jelszó), a hibaüzenet megjelenik.
-// Tartalmaz linket a regisztrációs oldalra is.
-// ================================================================
-
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, TextField, Typography, Container, Paper, Alert } from '@mui/material';
+import {
+    Box,
+    Button,
+    TextField,
+    Typography,
+    Container,
+    Paper,
+    Alert,
+    InputAdornment,
+    IconButton
+} from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
-// Azonos színpaletta az egész alkalmazásban
+// Design konstansok
 const BEIGE_THEME = {
     background: '#F2EBE3',
     paper: '#FAF9F6',
@@ -20,7 +25,6 @@ const BEIGE_THEME = {
     border: '#DED3C1'
 };
 
-// Közös stílus a TextField komponensekhez
 const textFieldSx = {
     '& .MuiInput-underline:before': { borderBottomColor: BEIGE_THEME.border },
     '& .MuiInput-underline:after': { borderBottomColor: BEIGE_THEME.accent },
@@ -32,17 +36,17 @@ const textFieldSx = {
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');        // Hibaüzenet (pl. "Hibás jelszó")
-    const [loading, setLoading] = useState(false);  // Gomb disabled állapot
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    // ── Form beküldés ───────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); // Töröljük az előző hibaüzenetet
+        setError('');
 
-        // Alap validáció
         if (!username || !password) {
             setError('Minden mező kitöltése kötelező');
             return;
@@ -51,9 +55,8 @@ export default function Login() {
         try {
             setLoading(true);
             await login(username, password);
-            navigate('/'); // Sikeres belépés → főoldal (naptár)
+            navigate('/');
         } catch (err) {
-            // A backend hibaüzenetét jelenítjük meg
             setError(err.message || 'Hiba történt a bejelentkezés során');
         } finally {
             setLoading(false);
@@ -78,40 +81,20 @@ export default function Login() {
                         boxShadow: '0 10px 30px rgba(74, 66, 56, 0.05)'
                     }}
                 >
-                    {/* ── Fejléc ──────────────────────────────── */}
-                    <Typography
-                        component="h1"
-                        variant="h4"
-                        sx={{ mb: 1, fontWeight: 300, letterSpacing: -1 }}
-                    >
+                    <Typography component="h1" variant="h4" sx={{ mb: 1, fontWeight: 300, letterSpacing: -1 }}>
                         üdvözlet.
                     </Typography>
-                    <Typography
-                        variant="body2"
-                        sx={{ mb: 4, color: BEIGE_THEME.text, opacity: 0.7, textTransform: 'lowercase', letterSpacing: 1 }}
-                    >
+                    <Typography variant="body2" sx={{ mb: 4, color: BEIGE_THEME.text, opacity: 0.7, textTransform: 'lowercase', letterSpacing: 1 }}>
                         jelentkezz be a naptáradba
                     </Typography>
 
-                    {/* ── Hibaüzenet ──────────────────────────── */}
                     {error && (
-                        <Alert
-                            severity="error"
-                            sx={{
-                                width: '100%',
-                                mb: 2,
-                                borderRadius: '12px',
-                                backgroundColor: 'rgba(211, 47, 47, 0.05)',
-                                color: '#d32f2f'
-                            }}
-                        >
+                        <Alert severity="error" sx={{ width: '100%', mb: 2, borderRadius: '12px' }}>
                             {error}
                         </Alert>
                     )}
 
-                    {/* ── Form ────────────────────────────────── */}
                     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-                        {/* Felhasználónév mező */}
                         <TextField
                             margin="normal"
                             required
@@ -123,54 +106,75 @@ export default function Login() {
                             sx={textFieldSx}
                         />
 
-                        {/* Jelszó mező */}
                         <TextField
                             margin="normal"
                             required
                             fullWidth
                             label="jelszó"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             variant="standard"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            sx={{
-                                ...textFieldSx,
-                                mt: 3,
-                                mb: 5
+                            sx={{ ...textFieldSx, mt: 3 }}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            edge="end"
+                                            sx={{ color: BEIGE_THEME.text, opacity: 0.6 }}
+                                        >
+                                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
                             }}
                         />
 
-                        {/* ── Bejelentkezés gomb ──────────────── */}
+                        {/* ELFELEJTETT JELSZÓ LINK */}
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', mt: 0.5 }}>
+                            <Button
+                                variant="text"
+                                onClick={() => navigate('/forgot-password')}
+                                sx={{
+                                    color: BEIGE_THEME.text,
+                                    opacity: 0.5,
+                                    fontSize: '0.7rem',
+                                    textTransform: 'lowercase',
+                                    '&:hover': { bgcolor: 'transparent', opacity: 1 }
+                                }}
+                            >
+                                elfelejtett jelszó?
+                            </Button>
+                        </Box>
+
                         <Button
                             type="submit"
                             fullWidth
                             variant="contained"
                             disabled={loading}
                             sx={{
+                                mt: 3,
                                 bgcolor: BEIGE_THEME.accent,
                                 color: 'white',
                                 '&:hover': { bgcolor: BEIGE_THEME.accentHover },
                                 borderRadius: '12px',
                                 py: 1.5,
                                 textTransform: 'lowercase',
-                                boxShadow: 'none',
-                                fontSize: '1rem',
-                                '&:disabled': { bgcolor: BEIGE_THEME.border }
+                                boxShadow: 'none'
                             }}
                         >
                             {loading ? 'bejelentkezés...' : 'bejelentkezés'}
                         </Button>
 
-                        {/* ── Választóvonal ────────────────────── */}
                         <Box sx={{ display: 'flex', alignItems: 'center', my: 2, width: '100%' }}>
                             <Box sx={{ flex: 1, height: '1px', bgcolor: BEIGE_THEME.border }} />
-                            <Typography variant="caption" sx={{ px: 2, color: BEIGE_THEME.text, opacity: 0.5, textTransform: 'lowercase' }}>
+                            <Typography variant="caption" sx={{ px: 2, color: BEIGE_THEME.text, opacity: 0.5 }}>
                                 vagy
                             </Typography>
                             <Box sx={{ flex: 1, height: '1px', bgcolor: BEIGE_THEME.border }} />
                         </Box>
 
-                        {/* ── Google login gomb ───────────────── */}
                         <Button
                             fullWidth
                             variant="outlined"
@@ -182,37 +186,23 @@ export default function Login() {
                                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                 </svg>
                             }
-                            onClick={() => { console.log("Google login — TODO: OAuth integráció"); }}
+                            onClick={() => console.log("Google OAuth integration")}
                             sx={{
                                 color: BEIGE_THEME.text,
                                 borderColor: BEIGE_THEME.border,
                                 borderRadius: '12px',
-                                py: 1.2,
                                 textTransform: 'none',
-                                fontSize: '0.9rem',
-                                backgroundColor: '#fff',
-                                '&:hover': {
-                                    borderColor: BEIGE_THEME.accent,
-                                    backgroundColor: '#fafafa',
-                                    boxShadow: 'none'
-                                }
+                                '&:hover': { borderColor: BEIGE_THEME.accent, bgcolor: '#fafafa' }
                             }}
                         >
                             belépés google-fiókkal
                         </Button>
 
-                        {/* ── Regisztráció link ──────────────── */}
                         <Button
                             fullWidth
                             variant="text"
                             onClick={() => navigate('/register')}
-                            sx={{
-                                mt: 2,
-                                color: BEIGE_THEME.text,
-                                opacity: 0.7,
-                                textTransform: 'lowercase',
-                                '&:hover': { bgcolor: 'transparent', opacity: 1 }
-                            }}
+                            sx={{ mt: 2, color: BEIGE_THEME.text, opacity: 0.7, textTransform: 'lowercase' }}
                         >
                             nincs még fiókod? regisztrálj
                         </Button>
