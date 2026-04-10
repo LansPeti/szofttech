@@ -6,6 +6,7 @@ const authRoutes = require("./routes/auth");
 const authMiddleware = require("./middleware/auth");
 const eventRoutes = require("./routes/events");
 const sharingRoutes = require("./routes/sharing");
+const userRoutes = require("./routes/user");
 
 const app = express();
 const PORT = 5000;
@@ -20,6 +21,7 @@ app.use("/api", authRoutes);
 // Védett végpontok (token kötelező — authMiddleware ellenőrzi)
 app.use("/api/events", authMiddleware, eventRoutes);
 app.use("/api/sharing", authMiddleware, sharingRoutes);
+app.use("/api/user", authMiddleware, userRoutes);
 
 // Teszt végpont — alap elérhetőség ellenőrzéséhez
 app.get("/api/hello", (req, res) => {
