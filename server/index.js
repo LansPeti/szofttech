@@ -12,7 +12,7 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
-app.use("/api", authRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from Express backend!" });
