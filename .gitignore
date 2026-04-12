@@ -32,4 +32,5 @@ dist/
 .vscode/
 .idea/
 
+# Data
 server/data/users.json

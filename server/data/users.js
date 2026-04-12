@@ -1,4 +1,5 @@
 const fs = require("fs");
+const { v4: uuid } = require("uuid");
 
 const USERS_FILE = 'data/users.json';
 
@@ -23,15 +24,18 @@ function findByUsername(username) {
 
 class DuplicateUserError extends Error { }
 
-function addUser(user) {
-    if (users.find(u => u.email === user.email)) {
+function addUser({username, email, password}) {
+    if (users.find(u => u.email === email)) {
         throw new DuplicateUserError("Email already registered");
     }
-    if (users.find(u => u.username === user.username)) {
+    if (users.find(u => u.username === username)) {
         throw new DuplicateUserError("Username already taken");
     }
-    users.push(user);
+    const newUser = {id : uuid(), username, email, password};
+    users.push(newUser);
     fs.writeFileSync(USERS_FILE, JSON.stringify({ users }, null, 2), 'utf8');
+    const { password: _ , ...publicUser } = newUser;
+    return publicUser;
 }
 
 module.exports = { findByUsername, addUser, DuplicateUserError };
