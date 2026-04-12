@@ -35,15 +35,21 @@ async function apiFetch(endpoint, options = {}) {
   };
 
   // A tényleges fetch hívás a backend felé
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    // Ez ág akkor fut le, ha a fetch hálózati szinten szakad meg (pl. backend halott)
+    throw new Error("Nem sikerült kapcsolódni a szerverhez. Ellenőrizd az interneted vagy a szervert!");
+  }
 
   // ── 401 kezelés ──────────────────────────────────────────────
   // Ha a backend 401-et ad (pl. lejárt token), automatikusan kijelentkeztetjük
-  // a felhasználót és átirányítjuk a login oldalra.
-  if (response.status === 401) {
+  // a felhasználót és átirányítjuk a login oldalra (KIVÉVE magát a login-t).
+  if (response.status === 401 && endpoint !== "/auth/login") {
     localStorage.removeItem("token");
     window.location.href = "/login";
     throw new Error("Lejárt a munkamenet");
@@ -70,30 +76,47 @@ async function apiFetch(endpoint, options = {}) {
 // AUTH SERVICE — Bejelentkezés és regisztráció
 // ================================================================
 export const authService = {
-  login: async (username, password) => {
-    const response = await fetch(`${API_BASE}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+  /**
+   * Bejelentkezés felhasználónév + jelszóval.
+   * A backend JWT tokent ad vissza, amit a localStorage-ben tárolunk.
+   * Emma route: /api/auth/login
+   * @returns {{ id, username, email, avatarColor, token }}
+   */
+  login: (username, password) =>
+    apiFetch("/auth/login", {
+      method: "POST",
       body: JSON.stringify({ username, password }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
-    }
-    return response.json();
-  },
-register: async (username, password, email) => {
-    const response = await fetch(`${API_BASE}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
-    }
-    return response.json();
-  }
+    }),
+
+  /**
+   * Új felhasználó regisztrációja.
+   * Sikeres regisztráció után a backend azonnal tokent is ad (auto-login).
+   * Emma route: /api/auth/register
+   * @returns {{ id, username, email, token }}
+   */
+  register: (username, email, password, securityQuestion, securityAnswer) =>
+    apiFetch("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ username, email, password, securityQuestion, securityAnswer }),
+    }),
+
+  /**
+   * Lekéri a felhasználóhoz tartozó biztonsági kérdést.
+   */
+  getSecurityQuestion: (username) =>
+    apiFetch("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ username }),
+    }),
+
+  /**
+   * Jelszó visszaállítása a helyes biztonsági válasszal.
+   */
+  resetPassword: (username, answer, newPassword) =>
+    apiFetch("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ username, answer, newPassword }),
+    }),
 };
 // ================================================================
 // EVENT SERVICE — Naptáresemények CRUD műveletei

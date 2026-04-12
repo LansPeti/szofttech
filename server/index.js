@@ -9,21 +9,23 @@ const authMiddleware = require("./middleware/auth");
 const eventRoutes = require("./routes/events");
 const sharingRoutes = require("./routes/sharing");
 const userRoutes = require("./routes/user");
+const settingsRoutes = require("./routes/settings");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware-ek — CORS engedélyezés és JSON body parsing
 app.use(cors());
 app.use(express.json());
 
-// Publikus végpontok (nem kell token)
-app.use("/api", authRoutes);
+// Publikus végpontok — Emma: /api/auth prefix (nem kell token)
+app.use("/api/auth", authRoutes);
 
 // Védett végpontok (token kötelező — authMiddleware ellenőrzi)
 app.use("/api/events", authMiddleware, eventRoutes);
 app.use("/api/sharing", authMiddleware, sharingRoutes);
 app.use("/api/user", authMiddleware, userRoutes);
+app.use("/api/settings", authMiddleware, settingsRoutes);
 
 // Teszt végpont — alap elérhetőség ellenőrzéséhez
 app.get("/api/hello", (req, res) => {

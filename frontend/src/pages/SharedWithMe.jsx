@@ -104,7 +104,7 @@ export default function SharedWithMe() {
         {invites.length > 0 && invites.map((invite) => (
           <Paper key={invite.id} elevation={0} sx={{ p: 3, borderRadius: '20px', bgcolor: BEIGE_THEME.paper, border: `1px solid ${BEIGE_THEME.accent}` }}>
             <Typography sx={{ color: BEIGE_THEME.text, mb: 2, fontWeight: 500 }}>
-              {invite.senderName} meghívott a naptárába
+              {invite.owner?.username || 'Ismeretlen'} meghívott a naptárába
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="flex-end">
               <Button onClick={() => handleInviteAction(invite.id, 'reject')} variant="outlined" size="small" sx={{ borderColor: BEIGE_THEME.border, color: BEIGE_THEME.text, textTransform: 'lowercase', borderRadius: '8px' }}>
@@ -131,7 +131,7 @@ export default function SharedWithMe() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <PeopleOutlineIcon sx={{ color: BEIGE_THEME.accent, opacity: 0.7 }} />
               <Typography sx={{ color: BEIGE_THEME.text }}>
-                {cal.ownerName} naptára
+                {cal.owner?.username || 'Ismeretlen'} naptára
               </Typography>
             </Box>
             <Button onClick={() => handleLeave(cal.id)} variant="text" sx={{ color: BEIGE_THEME.text, opacity: 0.6, textTransform: 'lowercase', fontSize: '0.8rem' }}>

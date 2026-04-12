@@ -2,11 +2,11 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
+const { findById, findByInviteToken } = require("../data/users");
 
 const router = express.Router();
 
 const sharesFilePath = path.join(__dirname, "../data/shares.json");
-const usersFilePath = path.join(__dirname, "../data/users.json");
 const eventsFilePath = path.join(__dirname, "../data/events.json");
 
 //////////////////////////////////////////////////////
@@ -15,9 +15,16 @@ const eventsFilePath = path.join(__dirname, "../data/events.json");
 
 function readJson(filePath) {
   if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify([]));
+    fs.writeFileSync(filePath, "[]");
+    return [];
   }
-  return JSON.parse(fs.readFileSync(filePath));
+  try {
+    const data = fs.readFileSync(filePath, "utf8");
+    if (!data.trim()) return [];
+    return JSON.parse(data);
+  } catch (error) {
+    return [];
+  }
 }
 
 function writeJson(filePath, data) {
@@ -32,7 +39,6 @@ function writeJson(filePath, data) {
 
 router.get("/invites", (req, res) => {
   const shares = readJson(sharesFilePath);
-  const users = readJson(usersFilePath);
 
   const invites = shares
     .filter(
@@ -41,7 +47,7 @@ router.get("/invites", (req, res) => {
         s.status === "PENDING"
     )
     .map((share) => {
-      const owner = users.find((u) => u.id === share.ownerId);
+      const owner = findById(share.ownerId);
 
       return {
         id: share.id,
@@ -66,10 +72,9 @@ router.get("/invites", (req, res) => {
 router.post("/invite", (req, res) => {
   const { inviteToken } = req.body;
 
-  const users = readJson(usersFilePath);
   const shares = readJson(sharesFilePath);
 
-  const owner = users.find((u) => u.inviteToken === inviteToken);
+  const owner = findByInviteToken(inviteToken);
 
   if (!owner) {
     return res.status(404).json({ error: "Érvénytelen meghívó token" });
@@ -154,7 +159,6 @@ function updateInviteStatus(req, res, newStatus) {
 
 router.get("/calendars", (req, res) => {
   const shares = readJson(sharesFilePath);
-  const users = readJson(usersFilePath);
 
   const calendars = shares
     .filter(
@@ -163,7 +167,7 @@ router.get("/calendars", (req, res) => {
         s.status === "ACCEPTED"
     )
     .map((share) => {
-      const owner = users.find((u) => u.id === share.ownerId);
+      const owner = findById(share.ownerId);
 
       return {
         id: share.id,

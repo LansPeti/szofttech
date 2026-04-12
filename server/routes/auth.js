@@ -1,115 +1,119 @@
 // routes/auth.js
 // ================================================================
-// Autentikációs végpontok: login és regisztráció.
-//
-// Mindkét endpoint JWT tokent generál és küld vissza,
-// amit a frontend localStorage-ben tárol és minden
-// további kéréshez Bearer tokenként mellékel.
+// Emma által véglegesített auth végpontok.
+// POST /login  — Bejelentkezés (bcrypt + JWT)
+// POST /register — Regisztráció (uuid + bcrypt hash + JWT)
 // ================================================================
 
 const express = require("express");
 const router = express.Router();
+const { findByUsername, addUser, updateUserPassword, DuplicateUserError } = require("../data/users");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const { v4: uuidv4 } = require("uuid");
-const { findByUsername, findById, addUser, DuplicateUserError } = require("../data/users");
+const { JWT_SECRET } = require("../config");
+const bcrypt = require("bcrypt");
 
-// JWT titkos kulcs — produkciós környezetben .env-ből jönne
-const JWT_SECRET = process.env.JWT_SECRET || "szoftech-secret-key";
-
-// ────────────────────────────────────────────────────
-// POST /api/login — Bejelentkezés
-// ────────────────────────────────────────────────────
 router.post("/login", async (req, res) => {
     const { username, password } = req.body;
 
-    // Validáció: mindkét mező kötelező
     if (!username || !password) {
-        return res.status(400).json({ error: "Felhasználónév és jelszó kötelező" });
+        return res.status(400).json({ error: "Felhasználónév és jelszó megadása kötelező!" });
     }
 
-    // Felhasználó keresése username alapján
     const user = findByUsername(username);
 
-    if (!user) {
-        // Biztonsági best practice: ne áruljuk el melyik mező rossz
+    // bcrypt.compare async — await kell, különben a Promise mindig truthy!
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
         return res.status(401).json({ error: "Hibás felhasználónév vagy jelszó" });
     }
 
-    // Jelszó ellenőrzés — bcrypt hash összehasonlítás
-    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordMatch) {
-        return res.status(401).json({ error: "Hibás felhasználónév vagy jelszó" });
-    }
-
-    // JWT token generálás (24 óra lejárattal)
-    const token = jwt.sign(
-        { id: user.id, username: user.username },
-        JWT_SECRET,
-        { expiresIn: "24h" }
-    );
-
-    // Válasz: user adatok + token (passwordHash SOHA nem megy ki!)
     res.status(200).json({
         id: user.id,
         username: user.username,
         email: user.email,
-        avatarColor: user.avatarColor || "#C2B280",
-        token,
+        avatarColor: user.avatarColor,
+        token: jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: "24h" })
     });
-});
+})
 
-// ────────────────────────────────────────────────────
-// POST /api/register — Regisztráció
-// ────────────────────────────────────────────────────
-router.post("/register", async (req, res) => {
-    const { username, email, password } = req.body;
+router.post("/register", (req, res) => {
+    const { username, email, password, securityQuestion, securityAnswer } = req.body;
 
-    // Validáció: minden mező kötelező
-    if (!username || !email || !password) {
-        return res.status(400).json({ error: "Minden mező kitöltése kötelező" });
+    if (!username || !email || !password || !securityQuestion || !securityAnswer) {
+        return res.status(400).json({ error: "Minden mező kitöltése kötelező (biztonsági kérdés és válasz is)!" });
     }
 
-    // Jelszó hashelés bcrypt-tel (10 round salt)
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Egyedi azonosítók generálása
-    const id = uuidv4();
-    const inviteToken = uuidv4();
-
     try {
-        // User mentése az adatbázisba (JSON fájl)
-        addUser({
-            id,
-            username,
-            email,
-            passwordHash,
-            avatarColor: "#C2B280",
-            inviteToken,
-            createdAt: new Date().toISOString(),
+        const user = addUser({ username, email, password, securityQuestion, securityAnswer });
+        res.status(201).json({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            token: jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: "24h" })
         });
     } catch (err) {
         if (err instanceof DuplicateUserError) {
             return res.status(409).json({ error: err.message });
         }
+
         console.error("Failed to write users file:", err);
-        return res.status(500).json({ error: "Belső szerverhiba" });
+        return res.status(500).json({ error: "Belső kiszolgálóhiba" });
+    }
+})
+
+// --------------------------------------------------------
+// Jelszó-visszaállítás (Elfelejtett jelszó) folyamata
+// --------------------------------------------------------
+
+// 1. lépés: Lekérjük a felhasználóhoz tartozó biztonsági kérdést
+router.post("/forgot-password", (req, res) => {
+    const { username } = req.body;
+
+    if (!username) {
+        return res.status(400).json({ error: "Felhasználónév megadása kötelező!" });
     }
 
-    // JWT token generálás — regisztráció után azonnal be is jelentkeztetjük
-    const token = jwt.sign(
-        { id, username },
-        JWT_SECRET,
-        { expiresIn: "24h" }
-    );
+    const user = findByUsername(username);
 
-    // Válasz: user adatok + token
-    res.status(201).json({
-        id,
-        username,
-        email,
-        token,
-    });
+    if (!user) {
+        return res.status(404).json({ error: "Nem található ilyen felhasználó." });
+    }
+
+    if (!user.securityQuestion) {
+        return res.status(400).json({ error: "Ehhez a fiókhoz nincs beállítva biztonsági kérdés." });
+    }
+
+    res.status(200).json({ securityQuestion: user.securityQuestion });
+});
+
+// 2. lépés: Ellenőrizzük a választ és lecseréljük a jelszót
+router.post("/reset-password", async (req, res) => {
+    const { username, answer, newPassword } = req.body;
+
+    if (!username || !answer || !newPassword) {
+        return res.status(400).json({ error: "Minden mező kitöltése kötelező!" });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Az új jelszó legalább 6 karakter hosszú kell hogy legyen!" });
+    }
+
+    const user = findByUsername(username);
+
+    if (!user) {
+        return res.status(404).json({ error: "Nem található ilyen felhasználó." });
+    }
+
+    // A beírt válasz (csupa kisbetűvel, trimmelve) összehasonlítása a mentett hash-sel
+    const answerMatch = await bcrypt.compare(answer.toLowerCase().trim(), user.securityAnswerHash);
+
+    if (!answerMatch) {
+        return res.status(400).json({ error: "A megadott válasz helytelen." });
+    }
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    updateUserPassword(username, newPasswordHash);
+
+    res.status(200).json({ message: "A jelszó sikeresen megváltoztatva." });
 });
 
 module.exports = router;

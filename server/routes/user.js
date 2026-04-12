@@ -14,30 +14,8 @@
 
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
-const { findById } = require("../data/users");
-const fs = require("fs");
-const path = require("path");
-
-const USERS_FILE = path.join(__dirname, "../data/users.json");
-
-/**
- * Users.json közvetlen beolvasása/írása a módosító végpontokhoz.
- * (A findById a memóriában keres, de a mentéshez a fájlt kell frissíteni.)
- */
-function readUsersFile() {
-    try {
-        const data = fs.readFileSync(USERS_FILE, "utf8");
-        const parsed = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed : (parsed.users || []);
-    } catch {
-        return [];
-    }
-}
-
-function writeUsersFile(users) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
-}
+const bcrypt = require("bcrypt");
+const { findById, updateUserProfile, updateUserPassword } = require("../data/users");
 
 // ────────────────────────────────────────────────────
 // GET /api/user/profile — Saját profil lekérése
@@ -63,24 +41,30 @@ router.get("/profile", (req, res) => {
 // ────────────────────────────────────────────────────
 // PUT /api/user/profile — Profil módosítása
 // ────────────────────────────────────────────────────
-router.put("/profile", (req, res) => {
-    const users = readUsersFile();
-    const index = users.findIndex((u) => u.id === req.userId);
+router.put("/profile", async (req, res) => {
+    const { username, avatarColor, currentPassword } = req.body;
 
-    if (index === -1) {
+    const user = findById(req.userId);
+    if (!user) {
         return res.status(404).json({ error: "Felhasználó nem található" });
     }
 
-    const { username, avatarColor } = req.body;
+    if (!currentPassword) {
+        return res.status(400).json({ error: "A módosításhoz a jelenlegi jelszó megadása kötelező!" });
+    }
 
-    // Csak a küldött mezőket frissítjük
-    if (username !== undefined) users[index].username = username;
-    if (avatarColor !== undefined) users[index].avatarColor = avatarColor;
+    const passwordMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!passwordMatch) {
+        return res.status(400).json({ error: "Helytelen jelenlegi jelszó!" });
+    }
 
-    writeUsersFile(users);
+    const updated = updateUserProfile(req.userId, { username, avatarColor });
+
+    if (!updated) {
+        return res.status(404).json({ error: "Felhasználó nem található" });
+    }
 
     // Frissített profil visszaküldése (passwordHash nélkül)
-    const updated = users[index];
     res.status(200).json({
         id: updated.id,
         username: updated.username,
@@ -95,10 +79,9 @@ router.put("/profile", (req, res) => {
 // PUT /api/user/password — Jelszó megváltoztatása
 // ────────────────────────────────────────────────────
 router.put("/password", async (req, res) => {
-    const users = readUsersFile();
-    const index = users.findIndex((u) => u.id === req.userId);
+    const user = findById(req.userId);
 
-    if (index === -1) {
+    if (!user) {
         return res.status(404).json({ error: "Felhasználó nem található" });
     }
 
@@ -113,14 +96,14 @@ router.put("/password", async (req, res) => {
     }
 
     // Régi jelszó ellenőrzése
-    const passwordMatch = await bcrypt.compare(currentPassword, users[index].passwordHash);
+    const passwordMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!passwordMatch) {
-        return res.status(401).json({ error: "A régi jelszó nem helyes" });
+        return res.status(400).json({ error: "A régi jelszó nem helyes" });
     }
 
     // Új jelszó hashelése és mentése
-    users[index].passwordHash = await bcrypt.hash(newPassword, 10);
-    writeUsersFile(users);
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    updateUserPassword(user.username, newPasswordHash);
 
     res.status(200).json({ message: "Jelszó sikeresen megváltoztatva" });
 });

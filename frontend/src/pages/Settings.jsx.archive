@@ -41,7 +41,10 @@ export default function Settings() {
     const fetchSettings = async () => {
       try {
         const data = await settingsService.get();
-        if (data) setSettings(data);
+        if (data) {
+          // Mergeljük, hogy a frontendes "other" érték ne vesszen el a letöltéskor
+          setSettings(prev => ({ ...prev, ...data }));
+        }
       } catch (error) {
         console.error("Hiba:", error.message);
       } finally {
@@ -55,9 +58,10 @@ export default function Settings() {
     try {
       setSaving(true);
       await settingsService.update(settings);
-      navigate('/');
+      setMsg({ open: true, text: 'Beállítások sikeresen elmentve!', severity: 'success' });
     } catch (error) {
-      setMsg({ open: true, text: 'Hiba a mentés során' });
+      setMsg({ open: true, text: 'Hiba a mentés során', severity: 'error' });
+    } finally {
       setSaving(false);
     }
   };
@@ -159,7 +163,7 @@ export default function Settings() {
       </Paper>
 
       <Snackbar open={msg.open} autoHideDuration={3000} onClose={() => setMsg({ ...msg, open: false })}>
-        <Alert severity="error" sx={{ borderRadius: '12px' }}>{msg.text}</Alert>
+        <Alert severity={msg.severity || "error"} sx={{ borderRadius: '12px' }}>{msg.text}</Alert>
       </Snackbar>
     </Box>
   );

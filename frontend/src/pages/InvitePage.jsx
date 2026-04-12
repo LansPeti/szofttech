@@ -22,9 +22,9 @@ export default function InvitePage() {
     try {
       setLoading(true);
       await sharingService.sendInvite(token); // Az api.js-ben ez küldi el a tokent
-      navigate('/shared-with-me'); // Siker esetén a közös naptárakhoz visz
+      navigate('/shared'); // Siker esetén a közös naptárakhoz visz
     } catch (err) {
-      setError('A meghívó érvénytelen vagy már felhasználták.');
+      setError(err.message || 'A meghívó érvénytelen vagy már felhasználták.');
       setLoading(false);
     }
   };

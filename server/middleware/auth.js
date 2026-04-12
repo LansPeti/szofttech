@@ -1,6 +1,11 @@
-const jwt = require("jsonwebtoken");
+// middleware/auth.js
+// ================================================================
+// JWT token ellenőrző middleware.
+// Emma verziója: config.js-ből importálja a JWT_SECRET-et.
+// ================================================================
 
-const JWT_SECRET = process.env.JWT_SECRET || "szoftech-secret-key";
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../config");
 
 function authMiddleware(req, res, next) {
 

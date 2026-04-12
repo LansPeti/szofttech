@@ -1,81 +1,90 @@
 // data/users.js
 // ================================================================
-// Felhasználók kezelése — JSON fájl alapú tárolás.
-//
-// Funkciók:
-//   - loadUsers()     : users.json beolvasása induláskor
-//   - findByUsername() : keresés felhasználónév alapján
-//   - findById()      : keresés ID alapján (profil lekérés)
-//   - addUser()       : új felhasználó mentése (duplikáció ellenőrzéssel)
-//
-// A users.json formátuma: [ { id, username, email, passwordHash, ... }, ... ]
+// Emma által véglegesített user adatkezelő modul.
+// Felhasználókat olvas/ír a users.json fájlból.
+// Az addUser uuid-vel generál ID-t, bcrypt-tel hash-el jelszót,
+// és inviteToken-t is generál minden új regisztrációnál.
 // ================================================================
 
 const fs = require("fs");
-const path = require("path");
+const { v4: uuid } = require("uuid");
+const bcrypt = require("bcrypt");
 
-const USERS_FILE = path.join(__dirname, "users.json");
+const USERS_FILE = 'data/users.json';
 
-// Memóriában tartott user lista — induláskor betöltjük a fájlból
-let users = loadUsers();
+const users = loadUsers();
 
-/**
- * Users.json fájl betöltése.
- * Ha nem létezik vagy hibás, üres tömböt ad vissza.
- */
 function loadUsers() {
+    console.log("Loading users from ", USERS_FILE);
     try {
-        const data = fs.readFileSync(USERS_FILE, "utf8");
-        const parsed = JSON.parse(data);
-        // Támogatás a régi { users: [...] } és az új [...] formátumra is
-        const userList = Array.isArray(parsed) ? parsed : (parsed.users || []);
-        console.log(`Users loaded: ${userList.length} felhasználó`);
-        return userList;
+        const data = fs.readFileSync(USERS_FILE, 'utf8');
+        const parsed = JSON.parse(data).users;
+        console.log("Users loaded");
+        return parsed;
     } catch (err) {
         console.warn("users.json not found or invalid, returning empty list");
         return [];
     }
 }
 
-/**
- * Felhasználó keresése felhasználónév alapján.
- * @param {string} username
- * @returns {Object|undefined} - A user objektum vagy undefined
- */
 function findByUsername(username) {
-    return users.find((u) => u.username === username);
+    return users.find(u => u.username === username);
 }
 
-/**
- * Felhasználó keresése ID alapján (profil lekérdezéshez).
- * @param {string} id
- * @returns {Object|undefined} - A user objektum vagy undefined
- */
+// Keresés ID alapján — a user.js route használja (profil, meghívó link)
 function findById(id) {
-    return users.find((u) => u.id === id);
+    return users.find(u => u.id === id);
 }
 
-/**
- * Duplikáció hiba — ha a username vagy email már foglalt.
- */
-class DuplicateUserError extends Error {}
+function findByInviteToken(token) {
+    return users.find(u => u.inviteToken === token);
+}
 
-/**
- * Új felhasználó hozzáadása és mentése a JSON fájlba.
- * Ellenőrzi, hogy a username és email egyedi-e.
- * @param {Object} user - A teljes user objektum (id, username, email, passwordHash, ...)
- * @throws {DuplicateUserError} - Ha a username vagy email már foglalt
- */
-function addUser(user) {
-    if (users.find((u) => u.email === user.email)) {
-        throw new DuplicateUserError("Ez az email cím már foglalt");
+class DuplicateUserError extends Error { }
+
+function addUser({username, email, password, securityQuestion, securityAnswer}) {
+    if (users.find(u => u.email === email)) {
+        throw new DuplicateUserError("Ezzel az e-mail címmel már létezik felhasználó");
     }
-    if (users.find((u) => u.username === user.username)) {
+    if (users.find(u => u.username === username)) {
         throw new DuplicateUserError("Ez a felhasználónév már foglalt");
     }
-    users.push(user);
-    // Mentés: az új formátum sima tömb (nem { users: [...] })
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const securityAnswerHash = bcrypt.hashSync(securityAnswer.toLowerCase().trim(), 10);
+
+    const newUser = {
+        id : uuid(),
+        username,
+        email,
+        passwordHash,
+        securityQuestion,
+        securityAnswerHash,
+        avatarColor : "#C2B280",
+        inviteToken : uuid(),
+        createdAt : new Date().toISOString()
+    };
+    users.push(newUser);
+    fs.writeFileSync(USERS_FILE, JSON.stringify({ users }, null, 2), 'utf8');
+    return { id: newUser.id, username: newUser.username, email: newUser.email };
 }
 
-module.exports = { findByUsername, findById, addUser, DuplicateUserError };
+function updateUserProfile(id, { username, avatarColor }) {
+    const user = users.find(u => u.id === id);
+    if (!user) return null;
+    
+    if (username !== undefined) user.username = username;
+    if (avatarColor !== undefined) user.avatarColor = avatarColor;
+    
+    fs.writeFileSync(USERS_FILE, JSON.stringify({ users }, null, 2), 'utf8');
+    return user;
+}
+
+function updateUserPassword(username, newPasswordHash) {
+    const user = users.find(u => u.username === username);
+    if (user) {
+        user.passwordHash = newPasswordHash;
+        fs.writeFileSync(USERS_FILE, JSON.stringify({ users }, null, 2), 'utf8');
+    }
+}
+
+module.exports = { findByUsername, findById, findByInviteToken, addUser, updateUserPassword, updateUserProfile, DuplicateUserError };

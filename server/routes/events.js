@@ -57,10 +57,25 @@ router.get("/", (req, res) => {
 router.post("/", (req, res) => {
   const { title, description, start, end, allDay, color } = req.body;
 
+  // Cím és kezdő dátum kötelező
   if (!title || !start) {
     return res
       .status(400)
       .json({ error: "A 'title' és 'start' mező kötelező" });
+  }
+
+  // Dátum validáció — megakadályozzuk az Invalid Date crash-t
+  const startDate = new Date(start);
+  if (isNaN(startDate.getTime())) {
+    return res.status(400).json({ error: "Érvénytelen kezdő dátum formátum" });
+  }
+
+  let endDate = null;
+  if (end) {
+    endDate = new Date(end);
+    if (isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: "Érvénytelen befejező dátum formátum" });
+    }
   }
 
   const events = readEvents();
@@ -70,8 +85,8 @@ router.post("/", (req, res) => {
     userId: req.userId,
     title,
     description: description || "",
-    start: new Date(start).toISOString(),
-    end: end ? new Date(end).toISOString() : null,
+    start: startDate.toISOString(),
+    end: endDate ? endDate.toISOString() : null,
     allDay: allDay || false,
     color: color || "#C2B280",
   };
@@ -79,7 +94,8 @@ router.post("/", (req, res) => {
   events.push(newEvent);
   writeEvents(events);
 
-  const { userId, ...responseEvent } = newEvent;  //Note: userId tudja a frontend?
+  // userId-t nem küldjük vissza a frontendnek
+  const { userId, ...responseEvent } = newEvent;
 
   res.status(201).json(responseEvent);
 });
@@ -109,12 +125,27 @@ router.put("/:id", (req, res) => {
 
   const { title, description, start, end, allDay, color } = req.body;
 
+  // Dátum validáció — ha küldték, ellenőrizzük, hogy érvényesek-e
   if (title !== undefined) event.title = title;
   if (description !== undefined) event.description = description;
-  if (start !== undefined)
-    event.start = new Date(start).toISOString();
-  if (end !== undefined)
-    event.end = end ? new Date(end).toISOString() : null;
+  if (start !== undefined) {
+    const startDate = new Date(start);
+    if (isNaN(startDate.getTime())) {
+      return res.status(400).json({ error: "Érvénytelen kezdő dátum formátum" });
+    }
+    event.start = startDate.toISOString();
+  }
+  if (end !== undefined) {
+    if (end) {
+      const endDate = new Date(end);
+      if (isNaN(endDate.getTime())) {
+        return res.status(400).json({ error: "Érvénytelen befejező dátum formátum" });
+      }
+      event.end = endDate.toISOString();
+    } else {
+      event.end = null;
+    }
+  }
   if (allDay !== undefined) event.allDay = allDay;
   if (color !== undefined) event.color = color;
 

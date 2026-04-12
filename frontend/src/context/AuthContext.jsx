@@ -50,9 +50,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     // ── Regisztráció ────────────────────────────────────────────
-    const register = async (username, password, email) => {
+    const register = async (username, email, password, securityQuestion, securityAnswer) => {
         try {
-            const data = await authService.register(username, password, email);
+            const data = await authService.register(username, email, password, securityQuestion, securityAnswer);
 
             // Regisztráció után automatikusan be is jelentkeztetjük
             localStorage.setItem('token', data.token);

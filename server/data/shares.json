@@ -1,0 +1,23 @@
+[
+  {
+    "id": "d17c93cc-8ff6-42fb-8573-493bb1c52a11",
+    "ownerId": "3dea53fb-bf24-44e3-9dab-ca4d85285a0b",
+    "sharedWithId": "b98c5cb3-07c1-48e2-b9dd-9798425734e9",
+    "status": "ACCEPTED",
+    "createdAt": "2026-04-12T10:04:42.517Z"
+  },
+  {
+    "id": "ba32782a-bfb5-4c4d-a252-79cecf509a58",
+    "ownerId": "408546b9-2396-4873-bb6e-aeea5c1fc60c",
+    "sharedWithId": "b98c5cb3-07c1-48e2-b9dd-9798425734e9",
+    "status": "ACCEPTED",
+    "createdAt": "2026-04-12T10:12:32.002Z"
+  },
+  {
+    "id": "809932c6-0486-4978-b6cd-89a0f9970fef",
+    "ownerId": "7cfdcbb9-3bea-43e1-88e7-b3c1bf4b388e",
+    "sharedWithId": "1d90a066-7afa-4644-bf49-a5175ba1fce6",
+    "status": "ACCEPTED",
+    "createdAt": "2026-04-12T22:11:06.470Z"
+  }
+]

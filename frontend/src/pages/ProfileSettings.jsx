@@ -10,11 +10,15 @@ import {
   Divider,
   CircularProgress,
   Snackbar,
-  Alert
+  Alert,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { userService } from '../services/api';
 
 const BEIGE_THEME = {
@@ -37,7 +41,12 @@ export default function ProfileSettings() {
   // UI állapotok
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
   const [msg, setMsg] = useState({ open: false, text: '', severity: 'success' });
+
+  const handleClickShowPassword = (field) => {
+    setShowPassword({ ...showPassword, [field]: !showPassword[field] });
+  };
 
   // 1. Profil betöltése indításkor
   useEffect(() => {
@@ -55,34 +64,30 @@ export default function ProfileSettings() {
     fetchProfile();
   }, []);
 
-  // 2. Név és szín mentése
+  // 2. Mentés összevonva: Profil adatok + Jelszó (ha ki van töltve)
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
+      
+      if (!passwords.current) {
+        throw new Error("A módosítások mentéséhez add meg a jelenlegi jelszavadat!");
+      }
+
+      // Jelszó csere, ha a felhasználó kitöltötte az új jelszó mezőt
+      if (passwords.new || passwords.confirm) {
+        if (passwords.new !== passwords.confirm) {
+          throw new Error("Az új jelszavak nem egyeznek.");
+        }
+        await userService.changePassword(passwords.current, passwords.new);
+      }
+
       await userService.updateProfile({
         username: profile.username,
-        avatarColor: profile.avatarColor
+        avatarColor: profile.avatarColor,
+        currentPassword: passwords.current
       });
-      setMsg({ open: true, text: 'profil sikeresen frissítve', severity: 'success' });
-      // Rövid várakozás után visszavisz a főoldalra
-      setTimeout(() => navigate('/'), 1000);
-    } catch (error) {
-      setMsg({ open: true, text: 'hiba a mentés során: ' + error.message, severity: 'error' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // 3. Jelszó módosítása
-  const handleChangePassword = async () => {
-    if (passwords.new !== passwords.confirm) {
-      setMsg({ open: true, text: 'az új jelszavak nem egyeznek', severity: 'error' });
-      return;
-    }
-    try {
-      setSaving(true);
-      await userService.changePassword(passwords.current, passwords.new);
-      setMsg({ open: true, text: 'jelszó megváltoztatva', severity: 'success' });
+      
+      setMsg({ open: true, text: 'profil és beállítások sikeresen frissítve', severity: 'success' });
       setPasswords({ current: '', new: '', confirm: '' });
     } catch (error) {
       setMsg({ open: true, text: error.message, severity: 'error' });
@@ -165,18 +170,39 @@ export default function ProfileSettings() {
               </Typography>
             </Divider>
 
-            <TextField variant="standard" label="eddigi jelszó" type="password" fullWidth value={passwords.current} onChange={(e) => setPasswords({...passwords, current: e.target.value})} sx={{ mb: 2 }} />
-            <TextField variant="standard" label="új jelszó" type="password" fullWidth value={passwords.new} onChange={(e) => setPasswords({...passwords, new: e.target.value})} sx={{ mb: 2 }} />
-            <TextField variant="standard" label="új jelszó még egyszer" type="password" fullWidth value={passwords.confirm} onChange={(e) => setPasswords({...passwords, confirm: e.target.value})} sx={{ mb: 1 }} />
-
-            <Button
-              size="small"
-              onClick={handleChangePassword}
-              disabled={saving || !passwords.current || !passwords.new}
-              sx={{ color: BEIGE_THEME.accent, textTransform: 'lowercase', mb: 4, fontSize: '0.75rem' }}
-            >
-              jelszó frissítése
-            </Button>
+            <TextField variant="standard" label="eddigi jelszó" type={showPassword.current ? 'text' : 'password'} fullWidth value={passwords.current} onChange={(e) => setPasswords({...passwords, current: e.target.value})} sx={{ mb: 2 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => handleClickShowPassword('current')} sx={{ color: BEIGE_THEME.text, opacity: 0.7 }}>
+                      {showPassword.current ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+            <TextField variant="standard" label="új jelszó" type={showPassword.new ? 'text' : 'password'} fullWidth value={passwords.new} onChange={(e) => setPasswords({...passwords, new: e.target.value})} sx={{ mb: 2 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => handleClickShowPassword('new')} sx={{ color: BEIGE_THEME.text, opacity: 0.7 }}>
+                      {showPassword.new ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+            <TextField variant="standard" label="új jelszó még egyszer" type={showPassword.confirm ? 'text' : 'password'} fullWidth value={passwords.confirm} onChange={(e) => setPasswords({...passwords, confirm: e.target.value})} sx={{ mb: 3 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => handleClickShowPassword('confirm')} sx={{ color: BEIGE_THEME.text, opacity: 0.7 }}>
+                      {showPassword.confirm ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
 
             <Divider sx={{ mb: 3, opacity: 0.5 }} />
 

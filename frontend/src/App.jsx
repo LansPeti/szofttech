@@ -11,10 +11,11 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CalendarPage from './pages/CalendarPage';
-import Settings from './pages/Settings';
 import ProfileSettings from "./pages/ProfileSettings";
 import SharedWithMe from "./pages/SharedWithMe";
 import InvitePage from "./pages/InvitePage.jsx";
+import ForgotPassword from "./pages/ForgotPassword";
+import NotFound from "./pages/NotFound";
 
 function App() {
     return (
@@ -24,15 +25,18 @@ function App() {
                     {/* Publikus útvonalak — bejelentkezés nélkül is elérhetők */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
 
                     {/* Védett útvonalak — a Layout ellenőrzi, hogy be van-e jelentkezve */}
                     <Route element={<Layout />}>
                         <Route path="/" element={<CalendarPage />} />
-                        <Route path="/settings" element={<Settings />} />
                         <Route path="/shared" element={<SharedWithMe />} />
                         <Route path="/profile" element={<ProfileSettings />} />
                         <Route path="/invite/:token" element={<InvitePage />} />
                     </Route>
+
+                    {/* 404 CATCH-ALL ROUTE (Minden esetben legutolsó kell legyen) */}
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
