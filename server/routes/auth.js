@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const { findByUsername, addUser, DuplicateUserError } = require("../data/users");
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../config");
 
 router.post("/login", (req, res) => {
     const { username, password } = req.body;
@@ -26,7 +28,13 @@ router.post("/register", (req, res) => {
     }
 
     try {
-        addUser({ username, email, password });
+        const user = addUser({ username, email, password });
+        res.status(201).json({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            token: jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: "24h" })
+        });
     } catch (err) {
         if (err instanceof DuplicateUserError) {
             return res.status(409).json({ message: err.message });
@@ -35,8 +43,6 @@ router.post("/register", (req, res) => {
         console.error("Failed to write users file:", err);
         return res.status(500).json({ message: "Belső kiszolgálóhiba" });
     }
-
-    res.status(201).json({ message: "User registered" });
 })
 
 module.exports = router;

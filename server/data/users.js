@@ -1,5 +1,6 @@
 const fs = require("fs");
 const { v4: uuid } = require("uuid");
+const bcrypt = require("bcrypt");
 
 const USERS_FILE = 'data/users.json';
 
@@ -26,16 +27,24 @@ class DuplicateUserError extends Error { }
 
 function addUser({username, email, password}) {
     if (users.find(u => u.email === email)) {
-        throw new DuplicateUserError("Email already registered");
+        throw new DuplicateUserError("Ezzel az e-mail címmel már létezik felhasználó");
     }
     if (users.find(u => u.username === username)) {
-        throw new DuplicateUserError("Username already taken");
+        throw new DuplicateUserError("Ez a felhasználónév már foglalt");
     }
-    const newUser = {id : uuid(), username, email, password};
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const newUser = {
+        id : uuid(),
+        username,
+        email,
+        passwordHash,
+        avatarColor : "#C2B280",
+        inviteToken : uuid(),
+        createdAt : new Date().toISOString()
+    };
     users.push(newUser);
     fs.writeFileSync(USERS_FILE, JSON.stringify({ users }, null, 2), 'utf8');
-    const { password: _ , ...publicUser } = newUser;
-    return publicUser;
+    return { id: newUser.id, username: newUser.username, email: newUser.email };
 }
 
 module.exports = { findByUsername, addUser, DuplicateUserError };
