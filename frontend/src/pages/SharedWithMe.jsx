@@ -76,12 +76,6 @@ export default function SharedWithMe() {
     }
   };
 
-  // 4. LINK MÁSOLÁSA
-  const copyLink = () => {
-    const link = `${window.location.origin}/invite/${inviteToken}`;
-    navigator.clipboard.writeText(link);
-    setMsg({ open: true, text: 'link másolva a vágólapra', severity: 'success' });
-  };
 
   if (loading) {
     return (
@@ -95,7 +89,7 @@ export default function SharedWithMe() {
     <Box sx={{ minHeight: '100vh', bgcolor: BEIGE_THEME.background, display: 'flex', flexDirection: 'column', alignItems: 'center', p: 3, pb: 12 }}>
 
       <Typography variant="h4" sx={{ fontWeight: 300, color: BEIGE_THEME.text, mb: 4, textTransform: 'lowercase', letterSpacing: 2 }}>
-        veled megosztva.
+        veled megosztva
       </Typography>
 
       <Stack spacing={2} sx={{ width: '100%', maxWidth: '500px' }}>
@@ -140,18 +134,7 @@ export default function SharedWithMe() {
           </Paper>
         ))}
 
-        {/* ALSÓ FUNKCIÓ: Link másolása */}
-        <Box sx={{ pt: 2 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={copyLink}
-            startIcon={<ContentCopyIcon fontSize="small" />}
-            sx={{ py: 1.5, borderColor: BEIGE_THEME.border, color: BEIGE_THEME.text, borderRadius: '15px', textTransform: 'lowercase', fontSize: '0.85rem', borderStyle: 'dashed' }}
-          >
-            saját naptárba meghívó link másolása
-          </Button>
-        </Box>
+
       </Stack>
 
       {/* Visszajelző üzenetek (Sad Beige stílusban) */}
