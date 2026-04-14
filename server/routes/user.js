@@ -15,7 +15,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const { findById, updateUserProfile, updateUserPassword } = require("../data/users");
+const { findById, updateUserProfile, updateUserPassword, DuplicateUserError } = require("../data/users");
 
 // ────────────────────────────────────────────────────
 // GET /api/user/profile — Saját profil lekérése
@@ -58,7 +58,15 @@ router.put("/profile", async (req, res) => {
         return res.status(400).json({ error: "Helytelen jelenlegi jelszó!" });
     }
 
-    const updated = updateUserProfile(req.userId, { username, avatarColor });
+    let updated;
+    try {
+        updated = updateUserProfile(req.userId, { username, avatarColor });
+    } catch (err) {
+        if (err instanceof DuplicateUserError) {
+            return res.status(409).json({ error: err.message });
+        }
+        throw err;
+    }
 
     if (!updated) {
         return res.status(404).json({ error: "Felhasználó nem található" });

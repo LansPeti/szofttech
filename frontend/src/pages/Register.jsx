@@ -86,14 +86,14 @@ export default function Register() {
         <Box sx={{ bgcolor: BEIGE_THEME.background, minHeight: '100vh', display: 'flex' }}>
             <Container component="main" maxWidth="xs" sx={{ display: 'flex', alignItems: 'center' }}>
                 <Paper elevation={0} sx={{ p: 5, width: '100%', bgcolor: BEIGE_THEME.paper, borderRadius: '24px', border: `1px solid ${BEIGE_THEME.border}` }}>
-                    <Typography component="h1" variant="h4" sx={{ mb: 1, fontWeight: 300, textAlign: 'center' }}>regisztráció.</Typography>
+                    <Typography component="h1" variant="h4" sx={{ mb: 1, fontWeight: 300, textAlign: 'center' }}>regisztráció</Typography>
                     
                     {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>{error}</Alert>}
 
                     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-                        <TextField margin="normal" required fullWidth label="felhasználónév" variant="standard" value={username} onChange={(e) => setUsername(e.target.value)} sx={textFieldSx} />
+                        <TextField margin="normal" required fullWidth label="felhasználónév" variant="standard" value={username} onChange={(e) => setUsername(e.target.value)} inputProps={{ maxLength: 50 }} sx={textFieldSx} />
                         
-                        <TextField margin="normal" required fullWidth label="email" type="email" variant="standard" value={email} onChange={(e) => setEmail(e.target.value)} sx={{ ...textFieldSx, mt: 2 }} />
+                        <TextField margin="normal" required fullWidth label="email" type="email" variant="standard" value={email} onChange={(e) => setEmail(e.target.value)} inputProps={{ maxLength: 50 }} sx={{ ...textFieldSx, mt: 2 }} />
 
                         <TextField
                             margin="normal" required fullWidth label="jelszó"
@@ -101,6 +101,7 @@ export default function Register() {
                             variant="standard"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            inputProps={{ maxLength: 128 }}
                             sx={{ ...textFieldSx, mt: 2 }}
                             InputProps={{
                                 endAdornment: (
@@ -119,6 +120,7 @@ export default function Register() {
                             variant="standard"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
+                            inputProps={{ maxLength: 128 }}
                             sx={{ ...textFieldSx, mt: 2, mb: 3 }}
                         />
 
@@ -140,10 +142,11 @@ export default function Register() {
                             variant="standard"
                             value={securityAnswer}
                             onChange={(e) => setSecurityAnswer(e.target.value)}
+                            inputProps={{ maxLength: 100 }}
                             sx={{ ...textFieldSx, mb: 4 }}
                         />
 
-                        <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ bgcolor: BEIGE_THEME.accent, borderRadius: '12px', py: 1.5, textTransform: 'lowercase', boxShadow: 'none' }}>
+                        <Button type="submit" fullWidth variant="contained" disabled={loading || !username.trim() || !email.trim() || !password || !confirmPassword || !securityAnswer.trim()} sx={{ bgcolor: BEIGE_THEME.accent, borderRadius: '12px', py: 1.5, textTransform: 'lowercase', boxShadow: 'none' }}>
                             {loading ? 'regisztráció...' : 'regisztráció'}
                         </Button>
 

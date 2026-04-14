@@ -10,7 +10,8 @@
 // ================================================================
 
 // A backend szervere ezen a címen fut (Express, port 5000)
-const API_BASE = "http://localhost:5000/api";
+// Production esetén ugyanarról a domainről megy, ezért relatív '/calendar/api'-t használunk.
+const API_BASE = import.meta.env.PROD ? "/calendar/api" : "http://localhost:5000/api";
 
 /**
  * Általános fetch wrapper.

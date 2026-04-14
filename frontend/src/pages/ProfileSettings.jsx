@@ -65,15 +65,26 @@ export default function ProfileSettings() {
   }, []);
 
   // 2. Mentés összevonva: Profil adatok + Jelszó (ha ki van töltve)
+  // FONTOS SORREND: Először a profil mentés (ami ellenőrzi a jelenlegi jelszót),
+  // és CSAK UTÁNA a jelszócsere (ami megváltoztatja a hash-t).
+  // Ha fordítva lenne, a profil mentés már az ÚJ jelszó hash-ét találná,
+  // de a felhasználó még a RÉGI jelszavát írta be → hibás elutasítás.
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      
+
       if (!passwords.current) {
         throw new Error("A módosítások mentéséhez add meg a jelenlegi jelszavadat!");
       }
 
-      // Jelszó csere, ha a felhasználó kitöltötte az új jelszó mezőt
+      // 1. ELŐSZÖR: Profil adatok mentése (felhasználónév, szín)
+      await userService.updateProfile({
+        username: profile.username,
+        avatarColor: profile.avatarColor,
+        currentPassword: passwords.current
+      });
+
+      // 2. UTÁNA: Jelszó csere, ha a felhasználó kitöltötte az új jelszó mezőt
       if (passwords.new || passwords.confirm) {
         if (passwords.new !== passwords.confirm) {
           throw new Error("Az új jelszavak nem egyeznek.");
@@ -81,12 +92,6 @@ export default function ProfileSettings() {
         await userService.changePassword(passwords.current, passwords.new);
       }
 
-      await userService.updateProfile({
-        username: profile.username,
-        avatarColor: profile.avatarColor,
-        currentPassword: passwords.current
-      });
-      
       setMsg({ open: true, text: 'profil és beállítások sikeresen frissítve', severity: 'success' });
       setPasswords({ current: '', new: '', confirm: '' });
     } catch (error) {
@@ -98,7 +103,10 @@ export default function ProfileSettings() {
 
   // 4. Meghívó link másolása
   const copyInviteLink = () => {
-    const link = `${window.location.origin}/invite/${profile.inviteToken}`;
+    // import.meta.env.BASE_URL biztosítja, hogy belevonja a '/calendar/' mappát élesben, de dev-ben csak '/' marad
+    const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const link = `${window.location.origin}${baseUrl}/invite/${profile.inviteToken}`;
+
     navigator.clipboard.writeText(link);
     setMsg({ open: true, text: 'meghívó link másolva', severity: 'success' });
   };
@@ -129,7 +137,7 @@ export default function ProfileSettings() {
         textTransform: 'lowercase',
         letterSpacing: 2
       }}>
-        profil beállítások.
+        profil beállítások
       </Typography>
 
       <Paper elevation={0} sx={{
@@ -160,7 +168,8 @@ export default function ProfileSettings() {
               label="felhasználónév"
               fullWidth
               value={profile.username}
-              onChange={(e) => setProfile({...profile, username: e.target.value})}
+              onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+              inputProps={{ maxLength: 50 }}
               sx={{ mb: 3 }}
             />
 
@@ -170,7 +179,7 @@ export default function ProfileSettings() {
               </Typography>
             </Divider>
 
-            <TextField variant="standard" label="eddigi jelszó" type={showPassword.current ? 'text' : 'password'} fullWidth value={passwords.current} onChange={(e) => setPasswords({...passwords, current: e.target.value})} sx={{ mb: 2 }}
+            <TextField variant="standard" label="eddigi jelszó" type={showPassword.current ? 'text' : 'password'} fullWidth value={passwords.current} onChange={(e) => setPasswords({ ...passwords, current: e.target.value })} inputProps={{ maxLength: 128 }} sx={{ mb: 2 }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -181,7 +190,7 @@ export default function ProfileSettings() {
                 )
               }}
             />
-            <TextField variant="standard" label="új jelszó" type={showPassword.new ? 'text' : 'password'} fullWidth value={passwords.new} onChange={(e) => setPasswords({...passwords, new: e.target.value})} sx={{ mb: 2 }}
+            <TextField variant="standard" label="új jelszó" type={showPassword.new ? 'text' : 'password'} fullWidth value={passwords.new} onChange={(e) => setPasswords({ ...passwords, new: e.target.value })} inputProps={{ maxLength: 128 }} sx={{ mb: 2 }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -192,7 +201,7 @@ export default function ProfileSettings() {
                 )
               }}
             />
-            <TextField variant="standard" label="új jelszó még egyszer" type={showPassword.confirm ? 'text' : 'password'} fullWidth value={passwords.confirm} onChange={(e) => setPasswords({...passwords, confirm: e.target.value})} sx={{ mb: 3 }}
+            <TextField variant="standard" label="új jelszó még egyszer" type={showPassword.confirm ? 'text' : 'password'} fullWidth value={passwords.confirm} onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })} inputProps={{ maxLength: 128 }} sx={{ mb: 3 }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -214,7 +223,7 @@ export default function ProfileSettings() {
               {AVATAR_COLORS.map((color) => (
                 <Box
                   key={color}
-                  onClick={() => setProfile({...profile, avatarColor: color})}
+                  onClick={() => setProfile({ ...profile, avatarColor: color })}
                   sx={{
                     width: 28,
                     height: 28,
@@ -281,7 +290,7 @@ export default function ProfileSettings() {
       </Paper>
 
       {/* Visszajelzések */}
-      <Snackbar open={msg.open} autoHideDuration={3000} onClose={() => setMsg({...msg, open: false})}>
+      <Snackbar open={msg.open} autoHideDuration={3000} onClose={() => setMsg({ ...msg, open: false })}>
         <Alert
           severity={msg.severity}
           sx={{

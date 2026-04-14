@@ -72,7 +72,14 @@ function updateUserProfile(id, { username, avatarColor }) {
     const user = users.find(u => u.id === id);
     if (!user) return null;
     
-    if (username !== undefined) user.username = username;
+    // Ellenőrizzük, hogy a kívánt felhasználónév nem foglalt-e egy MÁSIK felhasználónál
+    if (username !== undefined && username !== user.username) {
+        const taken = users.find(u => u.username === username && u.id !== id);
+        if (taken) {
+            throw new DuplicateUserError("Ez a felhasználónév már foglalt!");
+        }
+        user.username = username;
+    }
     if (avatarColor !== undefined) user.avatarColor = avatarColor;
     
     fs.writeFileSync(USERS_FILE, JSON.stringify({ users }, null, 2), 'utf8');

@@ -126,6 +126,10 @@ export default function CalendarPage() {
     if (!newEvent.title || !newEvent.start) return;
 
     try {
+      if (newEvent.end && isNaN(new Date(newEvent.end).getTime())) {
+        throw new Error("Érvénytelen befejező dátum formátum");
+      }
+
       // Az adatokat összeállítjuk a backend számára
       const eventData = {
         title: newEvent.title,

@@ -32,6 +32,23 @@ app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from Express backend!" });
 });
 
+// -- Egyesített (Unified) Deployment a Linux szerverhez --
+// Ha létezik a "public" mappa (benne a lefordított React frontenddel), szolgáljuk ki!
+const path = require("path");
+const fs = require("fs");
+const publicPath = path.join(__dirname, "public");
+
+if (fs.existsSync(publicPath)) {
+  console.log("Serving static frontend from /public directory");
+  app.use(express.static(publicPath));
+  
+  // SPA Catch-all: ha nem API hívás, és nem konkrét static fájl, akkor az index.html-t adjuk vissza
+  // (Kifejezetten Regex-et használunk a '*' string helyett, az Express legújabb verziója miatt)
+  app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+}
+
 // Szerver indítása — tesztek alatt NEM indul (supertest kezeli)
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {

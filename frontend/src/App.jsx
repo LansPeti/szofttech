@@ -18,9 +18,12 @@ import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
 
 function App() {
+    // SPA hosztoláshoz: a React routernek tudnia kell, hogy a /calendar almappában fut (Nginx miatt)
+    const basename = import.meta.env.PROD ? '/calendar' : '/';
+
     return (
         <AuthProvider>
-            <BrowserRouter>
+            <BrowserRouter basename={basename}>
                 <Routes>
                     {/* Publikus útvonalak — bejelentkezés nélkül is elérhetők */}
                     <Route path="/login" element={<Login />} />

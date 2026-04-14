@@ -59,7 +59,8 @@ export default function Login() {
         try {
             setLoading(true);
             await login(username, password);
-            navigate(from, { replace: true });
+            // Mindig a főoldalra navigálunk (nem az utolsó mentett URL-re)
+            navigate('/', { replace: true });
         } catch (err) {
             setError(err.message || 'Hiba történt a bejelentkezés során');
         } finally {
@@ -86,7 +87,7 @@ export default function Login() {
                     }}
                 >
                     <Typography component="h1" variant="h4" sx={{ mb: 1, fontWeight: 300, letterSpacing: -1 }}>
-                        üdvözlet.
+                        üdvözlet
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 4, color: BEIGE_THEME.text, opacity: 0.7, textTransform: 'lowercase', letterSpacing: 1 }}>
                         jelentkezz be a naptáradba
@@ -107,6 +108,7 @@ export default function Login() {
                             variant="standard"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
+                            inputProps={{ maxLength: 50 }}
                             sx={textFieldSx}
                         />
 
@@ -119,6 +121,7 @@ export default function Login() {
                             variant="standard"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            inputProps={{ maxLength: 128 }}
                             sx={{ ...textFieldSx, mt: 3 }}
                             InputProps={{
                                 endAdornment: (
@@ -156,7 +159,7 @@ export default function Login() {
                             type="submit"
                             fullWidth
                             variant="contained"
-                            disabled={loading}
+                            disabled={loading || !username.trim() || !password}
                             sx={{
                                 mt: 3,
                                 bgcolor: BEIGE_THEME.accent,

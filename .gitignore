@@ -33,3 +33,4 @@ dist/
 .idea/
 
 server/data/users.json
+server/public/
