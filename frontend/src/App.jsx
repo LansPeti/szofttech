@@ -1,27 +1,45 @@
+// src/App.jsx
+// ================================================================
+// Az alkalmazás fő komponense — route-ok definiálása.
+// A Layout komponens védi a bejelentkezett útvonalakat:
+// ha nincs user, automatikusan a /login-ra irányít.
+// ================================================================
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import CalendarPage from './pages/CalendarPage';
-import Settings from './pages/Settings';
-import ProfileSettings from "./pages/ProfileSettings"; // Javítva
-import SharedWithMe from "./pages/SharedWithMe"; // Hozzáadva
+import ProfileSettings from "./pages/ProfileSettings";
+import SharedWithMe from "./pages/SharedWithMe";
+import InvitePage from "./pages/InvitePage.jsx";
+import ForgotPassword from "./pages/ForgotPassword";
+import NotFound from "./pages/NotFound";
 
 function App() {
+    // SPA hosztoláshoz: a React routernek tudnia kell, hogy a /calendar almappában fut (Nginx miatt)
+    const basename = import.meta.env.PROD ? '/calendar' : '/';
+
     return (
         <AuthProvider>
-            <BrowserRouter>
+            <BrowserRouter basename={basename}>
                 <Routes>
+                    {/* Publikus útvonalak — bejelentkezés nélkül is elérhetők */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
 
-                    {/* Védett útvonalak a Layout-on belül */}
+                    {/* Védett útvonalak — a Layout ellenőrzi, hogy be van-e jelentkezve */}
                     <Route element={<Layout />}>
                         <Route path="/" element={<CalendarPage />} />
-                        <Route path="/settings" element={<Settings />} />
-                        {/* Figyelj, hogy a path-ek egyezzenek a Layout navigációjával! */}
                         <Route path="/shared" element={<SharedWithMe />} />
                         <Route path="/profile" element={<ProfileSettings />} />
+                        <Route path="/invite/:token" element={<InvitePage />} />
                     </Route>
+
+                    {/* 404 CATCH-ALL ROUTE (Minden esetben legutolsó kell legyen) */}
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>

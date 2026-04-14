@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -7,13 +7,20 @@ import {
   Stack,
   Paper,
   Avatar,
-  Divider
+  Divider,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  InputAdornment,
+  IconButton
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import { useAuth } from '../context/AuthContext';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { userService } from '../services/api';
 
-// Sad Beige Színpaletta
 const BEIGE_THEME = {
   background: '#F2EBE3',
   paper: '#FAF9F6',
@@ -25,8 +32,92 @@ const BEIGE_THEME = {
 const AVATAR_COLORS = ['#C2B280', '#DED3C1', '#A89968', '#8E806A', '#E3D5CA', '#D5BDAF'];
 
 export default function ProfileSettings() {
-  const { logout } = useAuth();
-  const [selectedColor, setSelectedColor] = useState(AVATAR_COLORS[0]);
+  const navigate = useNavigate();
+
+  // Profil adatok állapota
+  const [profile, setProfile] = useState({ username: '', avatarColor: '', inviteToken: '' });
+  const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
+
+  // UI állapotok
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
+  const [msg, setMsg] = useState({ open: false, text: '', severity: 'success' });
+
+  const handleClickShowPassword = (field) => {
+    setShowPassword({ ...showPassword, [field]: !showPassword[field] });
+  };
+
+  // 1. Profil betöltése indításkor
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const data = await userService.getProfile();
+        setProfile(data);
+      } catch (error) {
+        console.error("Hiba a profil betöltésekor:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  // 2. Mentés összevonva: Profil adatok + Jelszó (ha ki van töltve)
+  // FONTOS SORREND: Először a profil mentés (ami ellenőrzi a jelenlegi jelszót),
+  // és CSAK UTÁNA a jelszócsere (ami megváltoztatja a hash-t).
+  // Ha fordítva lenne, a profil mentés már az ÚJ jelszó hash-ét találná,
+  // de a felhasználó még a RÉGI jelszavát írta be → hibás elutasítás.
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+
+      if (!passwords.current) {
+        throw new Error("A módosítások mentéséhez add meg a jelenlegi jelszavadat!");
+      }
+
+      // 1. ELŐSZÖR: Profil adatok mentése (felhasználónév, szín)
+      await userService.updateProfile({
+        username: profile.username,
+        avatarColor: profile.avatarColor,
+        currentPassword: passwords.current
+      });
+
+      // 2. UTÁNA: Jelszó csere, ha a felhasználó kitöltötte az új jelszó mezőt
+      if (passwords.new || passwords.confirm) {
+        if (passwords.new !== passwords.confirm) {
+          throw new Error("Az új jelszavak nem egyeznek.");
+        }
+        await userService.changePassword(passwords.current, passwords.new);
+      }
+
+      setMsg({ open: true, text: 'profil és beállítások sikeresen frissítve', severity: 'success' });
+      setPasswords({ current: '', new: '', confirm: '' });
+    } catch (error) {
+      setMsg({ open: true, text: error.message, severity: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 4. Meghívó link másolása
+  const copyInviteLink = () => {
+    // import.meta.env.BASE_URL biztosítja, hogy belevonja a '/calendar/' mappát élesben, de dev-ben csak '/' marad
+    const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const link = `${window.location.origin}${baseUrl}/invite/${profile.inviteToken}`;
+
+    navigator.clipboard.writeText(link);
+    setMsg({ open: true, text: 'meghívó link másolva', severity: 'success' });
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: BEIGE_THEME.background }}>
+        <CircularProgress sx={{ color: BEIGE_THEME.accent }} />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{
@@ -36,9 +127,9 @@ export default function ProfileSettings() {
       flexDirection: 'column',
       alignItems: 'center',
       p: 3,
-      pb: 12 // Hely az alsó navigációnak
+      pb: 12
     }}>
-      {/* Cím a wireframe alapján */}
+
       <Typography variant="h4" sx={{
         fontWeight: 300,
         color: BEIGE_THEME.text,
@@ -46,7 +137,7 @@ export default function ProfileSettings() {
         textTransform: 'lowercase',
         letterSpacing: 2
       }}>
-        profil beállítások.
+        profil beállítások
       </Typography>
 
       <Paper elevation={0} sx={{
@@ -55,83 +146,106 @@ export default function ProfileSettings() {
         bgcolor: BEIGE_THEME.paper,
         borderRadius: '24px',
         p: 4,
-        border: `1px solid ${BEIGE_THEME.border}`,
-        boxShadow: '0 10px 30px rgba(74, 66, 56, 0.03)'
+        border: `1px solid ${BEIGE_THEME.border}`
       }}>
         <Stack spacing={3} alignItems="center">
 
-          {/* Profilkép ikon (Wireframe felső kör) */}
+          {/* Avatar megjelenítése a választott színnel */}
           <Avatar sx={{
             width: 90,
             height: 90,
-            bgcolor: selectedColor,
+            bgcolor: profile.avatarColor || BEIGE_THEME.accent,
             border: `5px solid white`,
             boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
           }}>
             <PersonOutlineIcon sx={{ fontSize: 45, color: 'white' }} />
           </Avatar>
 
-          {/* Adatbeviteli mezők (Wireframe középső rész) */}
           <Box sx={{ width: '100%' }}>
+            {/* Felhasználónév módosítása */}
             <TextField
               variant="standard"
               label="felhasználónév"
               fullWidth
-              defaultValue="Lakatos Tibor"
-              sx={{ mb: 2, '& .MuiInputLabel-root': { textTransform: 'lowercase' } }}
-            />
-            <TextField
-              variant="standard"
-              label="eddigi jelszó"
-              type="password"
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              variant="standard"
-              label="új jelszó"
-              type="password"
-              fullWidth
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              variant="standard"
-              label="új jelszó még egyszer"
-              type="password"
-              fullWidth
-              sx={{ mb: 4 }}
+              value={profile.username}
+              onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+              inputProps={{ maxLength: 50 }}
+              sx={{ mb: 3 }}
             />
 
-            {/* Profilszín választása (A wireframe kis körei) */}
-            <Typography variant="caption" sx={{ color: BEIGE_THEME.text, opacity: 0.7, textTransform: 'lowercase', mb: 1, display: 'block' }}>
+            <Divider sx={{ mb: 3, opacity: 0.5 }}>
+              <Typography variant="caption" sx={{ color: BEIGE_THEME.text, opacity: 0.5 }}>
+                jelszó módosítása
+              </Typography>
+            </Divider>
+
+            <TextField variant="standard" label="eddigi jelszó" type={showPassword.current ? 'text' : 'password'} fullWidth value={passwords.current} onChange={(e) => setPasswords({ ...passwords, current: e.target.value })} inputProps={{ maxLength: 128 }} sx={{ mb: 2 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => handleClickShowPassword('current')} sx={{ color: BEIGE_THEME.text, opacity: 0.7 }}>
+                      {showPassword.current ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+            <TextField variant="standard" label="új jelszó" type={showPassword.new ? 'text' : 'password'} fullWidth value={passwords.new} onChange={(e) => setPasswords({ ...passwords, new: e.target.value })} inputProps={{ maxLength: 128 }} sx={{ mb: 2 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => handleClickShowPassword('new')} sx={{ color: BEIGE_THEME.text, opacity: 0.7 }}>
+                      {showPassword.new ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+            <TextField variant="standard" label="új jelszó még egyszer" type={showPassword.confirm ? 'text' : 'password'} fullWidth value={passwords.confirm} onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })} inputProps={{ maxLength: 128 }} sx={{ mb: 3 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => handleClickShowPassword('confirm')} sx={{ color: BEIGE_THEME.text, opacity: 0.7 }}>
+                      {showPassword.confirm ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            <Divider sx={{ mb: 3, opacity: 0.5 }} />
+
+            {/* Színválasztó körök */}
+            <Typography variant="caption" sx={{ color: BEIGE_THEME.text, opacity: 0.7, textTransform: 'lowercase', mb: 1.5, display: 'block' }}>
               profilszín választása
             </Typography>
-            <Stack direction="row" spacing={1.5} sx={{ mb: 4 }}>
+            <Stack direction="row" spacing={1.5} justifyContent="center" sx={{ mb: 4 }}>
               {AVATAR_COLORS.map((color) => (
                 <Box
                   key={color}
-                  onClick={() => setSelectedColor(color)}
+                  onClick={() => setProfile({ ...profile, avatarColor: color })}
                   sx={{
                     width: 28,
                     height: 28,
                     borderRadius: '50%',
                     bgcolor: color,
                     cursor: 'pointer',
-                    border: selectedColor === color ? `2px solid ${BEIGE_THEME.text}` : '2px solid transparent',
-                    transition: 'all 0.2s ease',
+                    border: profile.avatarColor === color ? `2px solid ${BEIGE_THEME.text}` : '2px solid transparent',
+                    transition: '0.2s',
                     '&:hover': { transform: 'scale(1.1)' }
                   }}
                 />
               ))}
             </Stack>
 
-            {/* Meghívó link másolása (Wireframe alsó szekció) */}
+            {/* Meghívó link szekció */}
             <Typography variant="caption" sx={{ color: BEIGE_THEME.text, opacity: 0.7, textTransform: 'lowercase', display: 'block', mb: 1 }}>
               saját naptárba meghívó link másolása
             </Typography>
             <Button
               fullWidth
               variant="outlined"
+              onClick={copyInviteLink}
               endIcon={<ContentCopyIcon fontSize="small" />}
               sx={{
                 mb: 4,
@@ -139,31 +253,18 @@ export default function ProfileSettings() {
                 color: BEIGE_THEME.text,
                 borderRadius: '12px',
                 textTransform: 'lowercase',
-                '&:hover': { borderColor: BEIGE_THEME.accent, bgcolor: 'transparent' }
+                borderStyle: 'dashed'
               }}
             >
               másolás
             </Button>
 
-            <Divider sx={{ mb: 2, borderColor: BEIGE_THEME.border, opacity: 0.5 }} />
-
-            {/* Kiegészítő funkciók */}
-            <Button fullWidth sx={{ color: '#d32f2f', textTransform: 'lowercase', opacity: 0.7, mb: 0.5 }}>
-              probléma jelzése
-            </Button>
-            <Button
-              fullWidth
-              onClick={logout}
-              sx={{ color: BEIGE_THEME.text, textTransform: 'lowercase', opacity: 0.7, mb: 4 }}
-            >
-              kijelentkezés
-            </Button>
-
-            {/* Fő akciógombok (Wireframe legalja) */}
-            <Stack direction="row" spacing={2}>
+            {/* Alsó funkciógombok */}
+            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
               <Button
                 fullWidth
                 variant="text"
+                onClick={() => navigate('/')} // VISSZAKÖRÖZ A FŐOLDALRA
                 sx={{ color: BEIGE_THEME.text, textTransform: 'lowercase' }}
               >
                 mégse
@@ -171,6 +272,8 @@ export default function ProfileSettings() {
               <Button
                 fullWidth
                 variant="contained"
+                onClick={handleSaveProfile}
+                disabled={saving}
                 sx={{
                   bgcolor: BEIGE_THEME.accent,
                   boxShadow: 'none',
@@ -179,12 +282,27 @@ export default function ProfileSettings() {
                   '&:hover': { bgcolor: '#A89968', boxShadow: 'none' }
                 }}
               >
-                mentés
+                {saving ? 'mentés...' : 'mentés'}
               </Button>
             </Stack>
           </Box>
         </Stack>
       </Paper>
+
+      {/* Visszajelzések */}
+      <Snackbar open={msg.open} autoHideDuration={3000} onClose={() => setMsg({ ...msg, open: false })}>
+        <Alert
+          severity={msg.severity}
+          sx={{
+            borderRadius: '12px',
+            bgcolor: BEIGE_THEME.paper,
+            color: BEIGE_THEME.text,
+            border: `1px solid ${BEIGE_THEME.border}`
+          }}
+        >
+          {msg.text}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

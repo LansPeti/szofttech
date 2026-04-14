@@ -1,0 +1,22 @@
+{
+    "users": [
+        {
+            "id": "a1b2c3d4",
+            "username": "alice",
+            "email": "alice@gmail.com",
+            "passwordHash": "hashedValue1",
+            "avatarColor" : "#FF0022",
+            "inviteToken" : "a9b8c7",
+            "createdAt" : "2026-04-12T10:23:45.123Z"
+        },
+        {
+            "id": "e5f6g7h8",
+            "username": "bob",
+            "email": "bob@gmail.com",
+            "passwordHash": "hashedValue2",
+            "avatarColor" : "#C2B280",
+            "inviteToken" : "d6e5f4",
+            "createdAt" : "2001-02-03T04:05:06.789Z"
+        }
+    ]
+}

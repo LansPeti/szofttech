@@ -1,8 +1,7 @@
-import { Outlet, Navigate, useNavigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AppBar, Toolbar, Typography, Button, Box, IconButton, Tooltip } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
-import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline'; // Új gombhoz
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'; // Új gombhoz
 
@@ -16,12 +15,19 @@ const BEIGE_THEME = {
 };
 
 export default function Layout() {
-    const { user, logout } = useAuth();
+    const { user, logout, loading } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
-    // Logika változatlan: Ha nincs bejelentkezve, azonnal kidobjuk a loginra
+    // Ha még tölt a session, ne csináljunk semmit (különben az F5 kidobna)
+    if (loading) {
+        return null;
+    }
+
+    // Logika változatlan: Ha nincs bejelentkezve, azonnal kidobjuk a loginra,
+    // de eltároljuk, hogy hova akart menni
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" state={{ from: location.pathname }} replace />;
     }
 
     return (
@@ -60,12 +66,6 @@ export default function Layout() {
                         <Tooltip title="velem megosztva">
                             <IconButton onClick={() => navigate('/shared')} sx={{ color: BEIGE_THEME.text }}>
                                 <PeopleOutlineIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="beállítások">
-                            <IconButton onClick={() => navigate('/settings')} sx={{ color: BEIGE_THEME.text }}>
-                                <SettingsIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
 

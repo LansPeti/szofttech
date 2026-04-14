@@ -1,0 +1,17 @@
+{
+  "83f54a5a-d69a-49cd-b1e3-8217184118ac": {
+    "language": "english",
+    "timezone": "Budapest (GMT+1)",
+    "defaultEventColor": "#C2B280"
+  },
+  "5748d11b-4a1c-4a47-ab13-8f10c96915f9": {
+    "language": "english",
+    "timezone": "Budapest (GMT+1)",
+    "defaultEventColor": "#C2B280"
+  },
+  "408546b9-2396-4873-bb6e-aeea5c1fc60c": {
+    "language": "magyar",
+    "timezone": "Budapest (GMT+1)",
+    "defaultEventColor": "#C2B280"
+  }
+}
