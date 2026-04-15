@@ -105,5 +105,4 @@ A projekt életciklusa alatt felmerült problémák és az alkalmazott kreatív 
 
 ---
 
-**Szerkesztve:** AntiGravity Assistant
-**Dokumentáció státusz:** KÉSZ (Véglegesített Architektúra)
+
